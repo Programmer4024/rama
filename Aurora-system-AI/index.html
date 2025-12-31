@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Aurora AI System Control</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; text-align: center; padding: 50px; background: #121212; color: white; }
+        .container { background: #1e1e1e; padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: inline-block; }
+        input { padding: 12px; width: 250px; border-radius: 5px; border: none; margin-bottom: 10px; }
+        button { padding: 12px 20px; cursor: pointer; border-radius: 5px; border: none; font-weight: bold; transition: 0.3s; }
+        .btn-exe { background: #00c8ff; color: black; }
+        .btn-mic { background: #ff4b2b; color: white; margin-left: 10px; }
+        #msg { margin-top: 20px; font-size: 1.2rem; color: #00ffcc; font-style: italic; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>Aurora System AI</h2>
+        <input type="text" id="cmd" placeholder="Type or use Voice...">
+        <br>
+        <button class="btn-exe" onclick="run()">Execute</button>
+        <button class="btn-mic" onclick="startListening()">🎤 Speak</button>
+        
+        <p id="msg">Waiting for command...</p>
+    </div>
+
+    <script>
+        // The main function to talk to Python
+        async function run() {
+            const taskInput = document.getElementById('cmd');
+            const statusText = document.getElementById('msg');
+            const task = taskInput.value;
+
+            if(!task) return;
+
+            statusText.innerText = "Processing...";
+
+            try {
+                const res = await fetch('http://localhost:5000/execute', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({task: task})
+                });
+                const data = await res.json();
+                
+                // Show the AI's reply message
+                statusText.innerText = "AI: " + data.status;
+                taskInput.value = ""; // Clear input after success
+            } catch (error) {
+                statusText.innerText = "Error: Backend not running!";
+            }
+        }
+
+        // Voice Recognition
+        function startListening() {
+            const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+            recognition.lang = 'en-US';
+            recognition.start();
+
+            document.getElementById('msg').innerText = "Listening to you...";
+
+            recognition.onresult = (event) => {
+                const speechToText = event.results[0][0].transcript;
+                document.getElementById('cmd').value = speechToText; 
+                run(); 
+            };
+        }
+    </script>
+</body>
+</html>
